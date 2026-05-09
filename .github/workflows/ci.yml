@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate build.sh syntax
+        run: bash -n build.sh
+      - name: Check required kernel config options
+        run: |
+          CONFIG="configs/gta7litewifi_nethunter.config"
+          for opt in CONFIG_USB_CONFIGFS_F_HID=y CONFIG_MAC80211=y CONFIG_RTL8XXXU=m CONFIG_PACKET=y; do
+            grep -q "^${opt}" "${CONFIG}" && echo "OK: ${opt}" || { echo "MISSING: ${opt}"; exit 1; }
+          done
+      - name: Verify docs exist
+        run: |
+          for f in docs/BUILD.md docs/FLASH.md SECURITY.md CHANGELOG.md LICENSE; do
+            [[ -f "${f}" ]] && echo "OK: ${f}" || { echo "MISSING: ${f}"; exit 1; }
+          done
